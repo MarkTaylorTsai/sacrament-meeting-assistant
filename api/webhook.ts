@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { lineClient } from '../src/config/line';
+import { supabase } from '../src/config/supabase';
 import { CommandParser } from '../src/services/commandParser';
 import { CommandHandler } from '../src/services/commandHandler';
 
@@ -25,6 +26,52 @@ export default async function handler(req: Request, res: Response) {
     
     for (const event of events) {
       console.log('Processing event:', event.type);
+      
+      // Track when bot is added to groups or users
+      if (event.type === 'follow') {
+        const userId = event.source.userId;
+        const groupId = event.source.groupId;
+        const roomId = event.source.roomId;
+        
+        const lineId = groupId || roomId || userId;
+        const type = groupId ? 'group' : roomId ? 'group' : 'user';
+        
+        if (lineId) {
+          try {
+            await supabase
+              .from('bot_subscribers')
+              .upsert({
+                line_id: lineId,
+                type: type
+              }, {
+                onConflict: 'line_id'
+              });
+            console.log(`Bot added to ${type}: ${lineId}`);
+          } catch (error) {
+            console.error('Failed to track subscriber:', error);
+          }
+        }
+      }
+      
+      // Track when bot is removed from groups
+      if (event.type === 'unfollow' || event.type === 'leave') {
+        const groupId = event.source.groupId;
+        const roomId = event.source.roomId;
+        
+        const lineId = groupId || roomId;
+        
+        if (lineId) {
+          try {
+            await supabase
+              .from('bot_subscribers')
+              .delete()
+              .eq('line_id', lineId);
+            console.log(`Bot removed from group: ${lineId}`);
+          } catch (error) {
+            console.error('Failed to remove subscriber:', error);
+          }
+        }
+      }
       
       if (event.type === 'message' && event.message.type === 'text') {
         const text = event.message.text;

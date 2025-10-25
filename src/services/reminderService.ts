@@ -1,4 +1,5 @@
 import { lineClient } from '../config/line';
+import { supabase } from '../config/supabase';
 import { DatabaseService } from './database';
 import { MessageFormatter } from './messageFormatter';
 
@@ -22,23 +23,38 @@ export class ReminderService {
       }
 
       const message = MessageFormatter.formatReminderMessage(assistant);
-      
-      // Note: In a real implementation, you would need to maintain a list of
-      // group IDs and user IDs that have added the bot. For this example,
-      // we'll assume you have a way to get these IDs.
-      // You might store them in your database or use LINE's webhook to track them.
-      
       console.log('Reminder message:', message);
       
-      // For now, we'll just log the message. In production, you would:
-      // 1. Get all group IDs and user IDs from your database
-      // 2. Send the message to each of them using lineClient.pushMessage()
+      // Get all LINE IDs from database (groups and users that have added the bot)
+      const { data: subscribers, error } = await supabase
+        .from('bot_subscribers')
+        .select('line_id, type');
       
-      // Example of how to send to a specific group/user:
-      // await lineClient.pushMessage('GROUP_ID_OR_USER_ID', {
-      //   type: 'text',
-      //   text: message
-      // });
+      if (error) {
+        console.error('Failed to fetch subscribers:', error);
+        return;
+      }
+      
+      if (!subscribers || subscribers.length === 0) {
+        console.log('No subscribers found. Bot needs to be added to groups/users first.');
+        return;
+      }
+      
+      // Send message to all subscribers
+      const sendPromises = subscribers.map(async (subscriber) => {
+        try {
+          await lineClient.pushMessage(subscriber.line_id, {
+            type: 'text',
+            text: message
+          });
+          console.log(`Message sent to ${subscriber.type}: ${subscriber.line_id}`);
+        } catch (sendError) {
+          console.error(`Failed to send message to ${subscriber.line_id}:`, sendError);
+        }
+      });
+      
+      await Promise.all(sendPromises);
+      console.log(`Reminder sent to ${subscribers.length} subscribers`);
       
     } catch (error) {
       console.error('Reminder service error:', error);
