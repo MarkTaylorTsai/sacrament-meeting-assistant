@@ -7,6 +7,14 @@ export class CommandParser {
   static parse(text: string): Command | null {
     const trimmed = text.trim();
     
+    // Only process messages that start with known command prefixes
+    if (!trimmed.startsWith('查看聚會助理') && 
+        !trimmed.startsWith('新增聚會助理') && 
+        !trimmed.startsWith('更新聚會助理') && 
+        !trimmed.startsWith('刪除聚會助理')) {
+      return null;
+    }
+    
     // Get all command
     if (trimmed === '查看聚會助理 全部') {
       return { type: 'get' };

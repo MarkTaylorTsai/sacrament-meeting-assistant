@@ -55,12 +55,9 @@ export default async function handler(req: Request, res: Response) {
             });
           }
         } else {
-          // Unknown command
-          console.log('Unknown command, sending help message');
-          await lineClient.replyMessage(replyToken, {
-            type: 'text',
-            text: '請使用正確的命令格式。輸入「查看聚會助理 全部」查看所有命令。'
-          });
+          // Not a valid command - do not reply
+          console.log('Message received but not a valid command, ignoring');
+          // Do not send any reply for non-command messages
         }
       }
     }
