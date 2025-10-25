@@ -68,6 +68,12 @@ export default async function handler(req: Request, res: Response) {
         const groupId = event.source.groupId;
         const roomId = event.source.roomId;
         
+        console.log(`${event.type} event details:`, {
+          groupId,
+          roomId,
+          source: event.source
+        });
+        
         const lineId = groupId || roomId;
         
         if (lineId) {
@@ -80,6 +86,8 @@ export default async function handler(req: Request, res: Response) {
           } catch (error) {
             console.error('Failed to remove subscriber:', error);
           }
+        } else {
+          console.log('No valid LINE ID found in leave event');
         }
       }
       

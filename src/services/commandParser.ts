@@ -1,5 +1,5 @@
 export interface Command {
-  type: 'get' | 'add' | 'update' | 'delete' | 'help' | 'check_subscribers';
+  type: 'get' | 'add' | 'update' | 'delete' | 'help' | 'check_subscribers' | 'add_group';
   data?: any;
 }
 
@@ -15,7 +15,8 @@ export class CommandParser {
         !trimmed.startsWith('幫助') &&
         !trimmed.startsWith('help') &&
         !trimmed.startsWith('檢查訂閱者') &&
-        !trimmed.startsWith('check subscribers')) {
+        !trimmed.startsWith('check subscribers') &&
+        !trimmed.startsWith('添加群組')) {
       return null;
     }
     
@@ -27,6 +28,17 @@ export class CommandParser {
     // Check subscribers command (admin only)
     if (trimmed === '檢查訂閱者' || trimmed === 'check subscribers') {
       return { type: 'check_subscribers' };
+    }
+    
+    // Add group manually command (admin only)
+    const addGroupMatch = trimmed.match(/^添加群組\s+(.+)$/);
+    if (addGroupMatch) {
+      return {
+        type: 'add_group',
+        data: {
+          groupId: addGroupMatch[1]
+        }
+      };
     }
     
     // Get all command

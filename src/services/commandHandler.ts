@@ -57,6 +57,26 @@ export class CommandHandler {
           
           return `📋 目前訂閱者 (${subscribers.length} 個):\n${subscriberList}`;
 
+        case 'add_group':
+          try {
+            const result = await supabase
+              .from('bot_subscribers')
+              .upsert({
+                line_id: command.data.groupId,
+                type: 'group'
+              }, {
+                onConflict: 'line_id'
+              });
+            
+            if (result.error) {
+              return `添加群組失敗: ${result.error.message}`;
+            }
+            
+            return `✅ 已成功添加群組: ${command.data.groupId}`;
+          } catch (error) {
+            return `添加群組時發生錯誤: ${error instanceof Error ? error.message : '未知錯誤'}`;
+          }
+
         case 'get':
           const assistants = await DatabaseService.getAll();
           return MessageFormatter.formatListMessage(assistants);
