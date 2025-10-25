@@ -1,6 +1,7 @@
 import { DatabaseService } from './database';
 import { MessageFormatter } from './messageFormatter';
 import { Command } from './commandParser';
+import { supabase } from '../config/supabase';
 
 export class CommandHandler {
   static async handleCommand(command: Command): Promise<string> {
@@ -36,6 +37,25 @@ export class CommandHandler {
 刪除聚會助理 1
 
 ⏰ 提醒：機器人會自動在每週六晚上7點發送提醒訊息`;
+
+        case 'check_subscribers':
+          const { data: subscribers, error } = await supabase
+            .from('bot_subscribers')
+            .select('line_id, type, created_at');
+          
+          if (error) {
+            return `檢查訂閱者時發生錯誤: ${error.message}`;
+          }
+          
+          if (!subscribers || subscribers.length === 0) {
+            return '目前沒有訂閱者。請將機器人加入群組或個人聊天。';
+          }
+          
+          const subscriberList = subscribers.map(sub => 
+            `• ${sub.type}: ${sub.line_id} (${new Date(sub.created_at).toLocaleString()})`
+          ).join('\n');
+          
+          return `📋 目前訂閱者 (${subscribers.length} 個):\n${subscriberList}`;
 
         case 'get':
           const assistants = await DatabaseService.getAll();

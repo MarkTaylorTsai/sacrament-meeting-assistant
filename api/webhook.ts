@@ -33,12 +33,19 @@ export default async function handler(req: Request, res: Response) {
         const groupId = event.source.groupId;
         const roomId = event.source.roomId;
         
+        console.log('Follow event details:', {
+          userId,
+          groupId,
+          roomId,
+          source: event.source
+        });
+        
         const lineId = groupId || roomId || userId;
         const type = groupId ? 'group' : roomId ? 'group' : 'user';
         
         if (lineId) {
           try {
-            await supabase
+            const result = await supabase
               .from('bot_subscribers')
               .upsert({
                 line_id: lineId,
@@ -46,10 +53,12 @@ export default async function handler(req: Request, res: Response) {
               }, {
                 onConflict: 'line_id'
               });
-            console.log(`Bot added to ${type}: ${lineId}`);
+            console.log(`Bot added to ${type}: ${lineId}`, result);
           } catch (error) {
             console.error('Failed to track subscriber:', error);
           }
+        } else {
+          console.log('No valid LINE ID found in follow event');
         }
       }
       

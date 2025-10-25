@@ -35,6 +35,8 @@ export class ReminderService {
         return;
       }
       
+      console.log(`Found ${subscribers?.length || 0} subscribers in database:`, subscribers);
+      
       // Add admin user ID from environment variable
       const adminUserId = process.env.ADMIN_LINE_USER_ID;
       const allRecipients = [...(subscribers || [])];
@@ -46,6 +48,8 @@ export class ReminderService {
         });
         console.log('Added admin user to recipients');
       }
+      
+      console.log(`Total recipients: ${allRecipients.length}`, allRecipients);
       
       if (allRecipients.length === 0) {
         console.log('No subscribers found. Bot needs to be added to groups/users first.');

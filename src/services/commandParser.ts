@@ -1,5 +1,5 @@
 export interface Command {
-  type: 'get' | 'add' | 'update' | 'delete' | 'help';
+  type: 'get' | 'add' | 'update' | 'delete' | 'help' | 'check_subscribers';
   data?: any;
 }
 
@@ -13,13 +13,20 @@ export class CommandParser {
         !trimmed.startsWith('更新聚會助理') && 
         !trimmed.startsWith('刪除聚會助理') &&
         !trimmed.startsWith('幫助') &&
-        !trimmed.startsWith('help')) {
+        !trimmed.startsWith('help') &&
+        !trimmed.startsWith('檢查訂閱者') &&
+        !trimmed.startsWith('check subscribers')) {
       return null;
     }
     
     // Help command
     if (trimmed === '幫助' || trimmed === 'help' || trimmed === '幫助命令') {
       return { type: 'help' };
+    }
+    
+    // Check subscribers command (admin only)
+    if (trimmed === '檢查訂閱者' || trimmed === 'check subscribers') {
+      return { type: 'check_subscribers' };
     }
     
     // Get all command
