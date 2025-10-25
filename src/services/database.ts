@@ -47,10 +47,16 @@ export class DatabaseService {
   }
 
   // Add new meeting assistant
-  static async add(assistant: Omit<MeetingAssistant, 'id' | 'created_at'>): Promise<MeetingAssistant> {
+  static async add(assistant: {
+    date: string;
+    usher1: string;
+    usher2: string;
+    sacrament1: string;
+    sacrament2: string;
+  }): Promise<MeetingAssistant> {
     const { data, error } = await supabase
       .from('meeting_assistants')
-      .insert(assistant)
+      .insert(assistant as any)
       .select()
       .single();
 
@@ -62,10 +68,16 @@ export class DatabaseService {
   }
 
   // Update meeting assistant
-  static async update(id: number, updates: Partial<Omit<MeetingAssistant, 'id' | 'created_at'>>): Promise<MeetingAssistant> {
+  static async update(id: number, updates: {
+    date?: string;
+    usher1?: string;
+    usher2?: string;
+    sacrament1?: string;
+    sacrament2?: string;
+  }): Promise<MeetingAssistant> {
     const { data, error } = await supabase
       .from('meeting_assistants')
-      .update(updates)
+      .update(updates as any)
       .eq('id', id)
       .select()
       .single();
