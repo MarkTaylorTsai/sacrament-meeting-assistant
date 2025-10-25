@@ -28,7 +28,7 @@ export default async function handler(req: Request, res: Response) {
       console.log('Processing event:', event.type);
       
       // Track when bot is added to groups or users
-      if (event.type === 'follow' || event.type === 'memberJoined') {
+      if (event.type === 'follow' || event.type === 'memberJoined' || event.type === 'join') {
         const userId = event.source.userId;
         const groupId = event.source.groupId;
         const roomId = event.source.roomId;
@@ -64,7 +64,7 @@ export default async function handler(req: Request, res: Response) {
       }
       
       // Track when bot is removed from groups
-      if (event.type === 'unfollow' || event.type === 'leave') {
+      if (event.type === 'unfollow' || event.type === 'leave' || event.type === 'memberLeft') {
         const groupId = event.source.groupId;
         const roomId = event.source.roomId;
         
