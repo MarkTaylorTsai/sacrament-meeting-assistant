@@ -1,5 +1,5 @@
 export interface Command {
-  type: 'get' | 'add' | 'update' | 'delete';
+  type: 'get' | 'add' | 'update' | 'delete' | 'help';
   data?: any;
 }
 
@@ -11,8 +11,15 @@ export class CommandParser {
     if (!trimmed.startsWith('查看聚會助理') && 
         !trimmed.startsWith('新增聚會助理') && 
         !trimmed.startsWith('更新聚會助理') && 
-        !trimmed.startsWith('刪除聚會助理')) {
+        !trimmed.startsWith('刪除聚會助理') &&
+        !trimmed.startsWith('幫助') &&
+        !trimmed.startsWith('help')) {
       return null;
+    }
+    
+    // Help command
+    if (trimmed === '幫助' || trimmed === 'help' || trimmed === '幫助命令') {
+      return { type: 'help' };
     }
     
     // Get all command
