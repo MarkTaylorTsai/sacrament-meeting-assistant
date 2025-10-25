@@ -64,8 +64,21 @@ export class ReminderService {
             text: message
           });
           console.log(`Message sent to ${recipient.type}: ${recipient.line_id}`);
-        } catch (sendError) {
+        } catch (sendError: any) {
           console.error(`Failed to send message to ${recipient.line_id}:`, sendError);
+          
+          // If it's a 400 error, the user/group might not have the bot
+          if (sendError.status === 400) {
+            console.log(`Removing invalid subscriber: ${recipient.line_id}`);
+            try {
+              await supabase
+                .from('bot_subscribers')
+                .delete()
+                .eq('line_id', recipient.line_id);
+            } catch (deleteError) {
+              console.error('Failed to remove invalid subscriber:', deleteError);
+            }
+          }
         }
       });
       

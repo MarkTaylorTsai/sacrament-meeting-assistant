@@ -28,16 +28,17 @@ export default async function handler(req: Request, res: Response) {
       console.log('Processing event:', event.type);
       
       // Track when bot is added to groups or users
-      if (event.type === 'follow') {
+      if (event.type === 'follow' || event.type === 'memberJoined') {
         const userId = event.source.userId;
         const groupId = event.source.groupId;
         const roomId = event.source.roomId;
         
-        console.log('Follow event details:', {
+        console.log(`${event.type} event details:`, {
           userId,
           groupId,
           roomId,
-          source: event.source
+          source: event.source,
+          members: event.members
         });
         
         const lineId = groupId || roomId || userId;
