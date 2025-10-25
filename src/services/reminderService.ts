@@ -35,26 +35,38 @@ export class ReminderService {
         return;
       }
       
-      if (!subscribers || subscribers.length === 0) {
+      // Add admin user ID from environment variable
+      const adminUserId = process.env.ADMIN_LINE_USER_ID;
+      const allRecipients = [...(subscribers || [])];
+      
+      if (adminUserId) {
+        allRecipients.push({
+          line_id: adminUserId,
+          type: 'admin'
+        });
+        console.log('Added admin user to recipients');
+      }
+      
+      if (allRecipients.length === 0) {
         console.log('No subscribers found. Bot needs to be added to groups/users first.');
         return;
       }
       
-      // Send message to all subscribers
-      const sendPromises = subscribers.map(async (subscriber) => {
+      // Send message to all recipients
+      const sendPromises = allRecipients.map(async (recipient) => {
         try {
-          await lineClient.pushMessage(subscriber.line_id, {
+          await lineClient.pushMessage(recipient.line_id, {
             type: 'text',
             text: message
           });
-          console.log(`Message sent to ${subscriber.type}: ${subscriber.line_id}`);
+          console.log(`Message sent to ${recipient.type}: ${recipient.line_id}`);
         } catch (sendError) {
-          console.error(`Failed to send message to ${subscriber.line_id}:`, sendError);
+          console.error(`Failed to send message to ${recipient.line_id}:`, sendError);
         }
       });
       
       await Promise.all(sendPromises);
-      console.log(`Reminder sent to ${subscribers.length} subscribers`);
+      console.log(`Reminder sent to ${allRecipients.length} recipients`);
       
     } catch (error) {
       console.error('Reminder service error:', error);
