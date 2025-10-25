@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sacrament Meeting Assistant Bot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .status {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .endpoints {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .endpoint {
+            margin: 10px 0;
+            font-family: monospace;
+            background: #e9ecef;
+            padding: 8px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Sacrament Meeting Assistant Bot</h1>
+        
+        <div class="status">
+            ✅ Bot is running and ready to receive commands!
+        </div>
+        
+        <h2>Available Endpoints:</h2>
+        <div class="endpoints">
+            <div class="endpoint">POST /webhook - LINE Bot webhook endpoint</div>
+            <div class="endpoint">POST /reminder - Cron job reminder endpoint</div>
+        </div>
+        
+        <h2>Bot Commands:</h2>
+        <ul>
+            <li><strong>查看聚會助理 全部</strong> - View all assignments</li>
+            <li><strong>新增聚會助理 日期 招待成員1 招待成員2 祝福聖餐弟兄1 祝福聖餐弟兄2</strong> - Add new assignment</li>
+            <li><strong>更新聚會助理 ID 欄位 更新內容</strong> - Update assignment</li>
+            <li><strong>刪除聚會助理 ID</strong> - Delete assignment</li>
+        </ul>
+        
+        <h2>Example Commands:</h2>
+        <div class="endpoints">
+            <div class="endpoint">新增聚會助理 2025-11-02 王小明 李大華 陳信宏 林偉翔</div>
+            <div class="endpoint">更新聚會助理 1 招待成員1 陳志強</div>
+            <div class="endpoint">刪除聚會助理 1</div>
+        </div>
+        
+        <p><em>Bot automatically sends reminders every Saturday at 7:00 PM</em></p>
+    </div>
+</body>
+</html>
