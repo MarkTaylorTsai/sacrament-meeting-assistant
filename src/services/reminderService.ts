@@ -7,7 +7,7 @@ import { MessageFormatter } from './messageFormatter';
 // LINE Bot API rate limit: ~20 push messages per second
 // Using 100ms delay = ~10 messages/second to stay well under the limit
 const MESSAGE_DELAY_MS = parseInt(process.env.LINE_MESSAGE_DELAY_MS || '100', 10); // Default: 100ms = ~10 messages/second (conservative)
-const MAX_RETRIES = parseInt(process.env.LINE_MAX_RETRIES || '5', 10); // Default: 5 retries
+const MAX_RETRIES = parseInt(process.env.LINE_MAX_RETRIES || '3', 10); // Default: 3 retries (reduced to prevent timeout)
 const INITIAL_RETRY_DELAY_MS = parseInt(process.env.LINE_INITIAL_RETRY_DELAY_MS || '1000', 10); // Default: 1 second
 
 export class ReminderService {
@@ -17,6 +17,7 @@ export class ReminderService {
   }
 
   // Retry wrapper with exponential backoff for 429 errors
+  // Optimized to prevent function timeout (max 30s on Vercel)
   private static async retryWithBackoff<T>(
     fn: () => Promise<T>,
     maxRetries: number = MAX_RETRIES,
@@ -33,16 +34,15 @@ export class ReminderService {
         // Only retry on 429 errors (rate limiting)
         if (error.statusCode === 429 || error.status === 429) {
           if (attempt < maxRetries) {
-            const delay = initialDelay * Math.pow(2, attempt); // Exponential backoff: 1s, 2s, 4s, 8s, 16s
+            const delay = initialDelay * Math.pow(2, attempt); // Exponential backoff: 1s, 2s, 4s (max ~7s total)
             console.log(`Rate limit hit (429), retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
             await this.delay(delay);
             continue;
           } else {
-            // After max retries, wait longer before giving up (rate limit usually resets in 1-5 minutes)
-            const finalDelay = 60000; // Wait 1 minute before giving up
-            console.warn(`Max retries (${maxRetries}) reached for rate limit error. Rate limits reset quickly (usually within minutes, not months). Waiting ${finalDelay/1000}s before continuing with next recipient...`);
-            await this.delay(finalDelay);
-            throw error; // Still throw to mark as failed, but we've waited for rate limit to potentially reset
+            // After max retries, skip this recipient to avoid timeout
+            // Rate limits reset quickly, but we can't wait in a serverless function
+            console.warn(`Max retries (${maxRetries}) reached for rate limit error. Skipping this recipient to prevent timeout. Rate limits reset quickly (usually within minutes).`);
+            throw error; // Throw to mark as failed, but don't wait
           }
         }
         
@@ -132,9 +132,9 @@ export class ReminderService {
           
           // Handle 429 errors (rate limiting) - these are temporary and reset quickly
           if (sendError.statusCode === 429 || sendError.status === 429) {
-            console.error(`Rate limit error for ${recipient.line_id}. Note: Rate limits reset quickly (usually within minutes, not months). Bot will continue working normally.`);
-            // Add extra delay after rate limit error to help rate limit reset
-            await this.delay(5000); // Wait 5 seconds before trying next recipient
+            console.error(`Rate limit error for ${recipient.line_id}. Skipping to prevent timeout. Rate limits reset quickly (usually within minutes).`);
+            // Add shorter delay after rate limit error to help rate limit reset without causing timeout
+            await this.delay(2000); // Wait 2 seconds before trying next recipient (reduced from 5s)
           } else {
             console.error(`Failed to send message to ${recipient.line_id}:`, sendError);
             
