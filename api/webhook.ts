@@ -92,10 +92,32 @@ export default async function handler(req: Request, res: Response) {
       }
       
       if (event.type === 'message' && event.message.type === 'text') {
-        const text = event.message.text;
-        const replyToken = event.replyToken;
+        const text = event.message.text?.trim() || '';
         
-        console.log('Received message:', text);
+        // Early exit: Check if message starts with a command prefix before any processing
+        // This prevents unnecessary processing and logging for regular group chat messages
+        const commandPrefixes = [
+          '查看聚會助理',
+          '新增聚會助理',
+          '更新聚會助理',
+          '刪除聚會助理',
+          '幫助',
+          'help',
+          '檢查訂閱者',
+          'check subscribers',
+          '添加群組'
+        ];
+        
+        const isCommand = commandPrefixes.some(prefix => text.startsWith(prefix));
+        
+        if (!isCommand) {
+          // Not a command - silently ignore (no logging to reduce noise in busy groups)
+          continue;
+        }
+        
+        // Only process and log actual commands
+        const replyToken = event.replyToken;
+        console.log('Received command:', text);
         
         // Parse the command
         const command = CommandParser.parse(text);
@@ -119,10 +141,6 @@ export default async function handler(req: Request, res: Response) {
               text: '處理命令時發生錯誤，請稍後再試。'
             });
           }
-        } else {
-          // Not a valid command - do not reply
-          console.log('Message received but not a valid command, ignoring');
-          // Do not send any reply for non-command messages
         }
       }
     }
