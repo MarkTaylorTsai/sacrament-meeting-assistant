@@ -4,7 +4,9 @@ import { DatabaseService } from './database';
 import { MessageFormatter } from './messageFormatter';
 
 // Rate limiting configuration
-const MESSAGE_DELAY_MS = parseInt(process.env.LINE_MESSAGE_DELAY_MS || '50', 10); // Default: 50ms = ~20 messages/second max
+// LINE Bot API rate limit: ~20 push messages per second
+// Using 100ms delay = ~10 messages/second to stay well under the limit
+const MESSAGE_DELAY_MS = parseInt(process.env.LINE_MESSAGE_DELAY_MS || '100', 10); // Default: 100ms = ~10 messages/second (conservative)
 const MAX_RETRIES = parseInt(process.env.LINE_MAX_RETRIES || '5', 10); // Default: 5 retries
 const INITIAL_RETRY_DELAY_MS = parseInt(process.env.LINE_INITIAL_RETRY_DELAY_MS || '1000', 10); // Default: 1 second
 
@@ -36,7 +38,11 @@ export class ReminderService {
             await this.delay(delay);
             continue;
           } else {
-            console.error(`Max retries (${maxRetries}) reached for rate limit error`);
+            // After max retries, wait longer before giving up (rate limit usually resets in 1-5 minutes)
+            const finalDelay = 60000; // Wait 1 minute before giving up
+            console.warn(`Max retries (${maxRetries}) reached for rate limit error. Rate limits reset quickly (usually within minutes, not months). Waiting ${finalDelay/1000}s before continuing with next recipient...`);
+            await this.delay(finalDelay);
+            throw error; // Still throw to mark as failed, but we've waited for rate limit to potentially reset
           }
         }
         
@@ -123,18 +129,26 @@ export class ReminderService {
           }
         } catch (sendError: any) {
           failureCount++;
-          console.error(`Failed to send message to ${recipient.line_id}:`, sendError);
           
-          // If it's a 400 error, the user/group might not have the bot
-          if (sendError.statusCode === 400 || sendError.status === 400) {
-            console.log(`Removing invalid subscriber: ${recipient.line_id}`);
-            try {
-              await supabase
-                .from('bot_subscribers')
-                .delete()
-                .eq('line_id', recipient.line_id);
-            } catch (deleteError) {
-              console.error('Failed to remove invalid subscriber:', deleteError);
+          // Handle 429 errors (rate limiting) - these are temporary and reset quickly
+          if (sendError.statusCode === 429 || sendError.status === 429) {
+            console.error(`Rate limit error for ${recipient.line_id}. Note: Rate limits reset quickly (usually within minutes, not months). Bot will continue working normally.`);
+            // Add extra delay after rate limit error to help rate limit reset
+            await this.delay(5000); // Wait 5 seconds before trying next recipient
+          } else {
+            console.error(`Failed to send message to ${recipient.line_id}:`, sendError);
+            
+            // If it's a 400 error, the user/group might not have the bot
+            if (sendError.statusCode === 400 || sendError.status === 400) {
+              console.log(`Removing invalid subscriber: ${recipient.line_id}`);
+              try {
+                await supabase
+                  .from('bot_subscribers')
+                  .delete()
+                  .eq('line_id', recipient.line_id);
+              } catch (deleteError) {
+                console.error('Failed to remove invalid subscriber:', deleteError);
+              }
             }
           }
           
